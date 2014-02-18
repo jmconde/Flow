@@ -1,4 +1,5 @@
 ![alt text](http://lab.xintana.com/flow/images/logoflow.jpg "Flow")
+
 v0.6.0
 
 ## Introducción
