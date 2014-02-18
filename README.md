@@ -6,14 +6,35 @@
 ### Flow
 Opciones:
 #### title
+Título de la página
+#### pageTag
+*Default: "article".*
+
+Tag con el que se crea la tabla.
 #### pageClass
+*Default: "flow-page".*
+
+Atributo class que se le asigna al elemnto página.
 #### featureClass
+*Default: "flow-feature".*
+
+Atributo class con que se identifica cada feature.
 #### autostart
+*Default: true.*
 #### env
+Se usa para definir el ambiente en el cual se ejecuta.
 #### defaultInTransition
+Transición de entrada por defecto para todas las páginas.
 #### defaultOutTransition
+Transición de salida por defecto para todas las páginas.
 #### templates
+
+Array. Contiene la definición de las plantillas.
+#### aftershowpage
+Función que se ejecuta luego de mostrar cada página
+
 #### flow
+Define el flujo principal de la aplicación.
 Opciones:
 #####id
 id de la pagina, si no existe se crea

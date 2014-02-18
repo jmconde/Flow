@@ -1,40 +1,4 @@
-/*
-    id
-    navigation: id del ul de navigation menu
-    title
-    pageClass
-    featureClass
-    autostart
-    env
-    defaultInTransition
-    defaultOutTransition
-    flow: [
-        {
-            id: <id de la pagina>, si no existe se crea
-            onexit
-            onshow
-            beforeshow
-            beforeloadcontent,
-            title
-            label
-            roles
-            disabled
-            content: {
-                handler: handlers.home,
-                format: "json",
-                route: "home",
-                template: <id template>,
-                url: puede contener  {parametro}
-            }
-        }...
-    ]
-    features:[{id: <id feature sin #>, hide: <efecto>, show: <efecto>}]
-    templates: { id: <id sin #>, name: <nombre interno>, engine: <handlerbars por ahora>}
-
- 
- 
-
- */
+/* Flow v0.6 */
 (function() {
     var root = this;
     var options = {
@@ -185,6 +149,7 @@
             if (options.actual.id != toShow.id) return;
             show(toShow);
             Flow.setTriggers(toShow);
+            if (options.aftershowpage) options.aftershowpage(toShow);
         } else {
             if (!url) {
                 url = Routes.get(c.route, query);
@@ -219,6 +184,7 @@
         toShow.display.html(template.template(data));
         show(toShow);
         Flow.setTriggers(toShow);
+        if (options.aftershowpage) options.aftershowpage(toShow);
     }
 
     function show(toShow) {
@@ -401,6 +367,7 @@
         if (!toShow.content) {
             show(toShow);
             Flow.setTriggers(toShow);
+            if (options.aftershowpage) options.aftershowpage(toShow);
         } else {
             loadContent(toShow, parameters.query);
         }
@@ -588,6 +555,10 @@
         $.extend(Routes, {
             routes: routes
         });
+    };
+    Routes.route = function(route, environment) {
+        environment = environment || "development";
+        return this.data[environment][route];
     };
 
     function getBase(routes) {
