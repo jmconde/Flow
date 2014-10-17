@@ -1,4 +1,4 @@
-![alt text](http://lab.xintana.com/flow/images/logoflow.jpg "Flow")
+![Flow](http://joseconde.info/images/logoflow.jpg)
 
 v0.6.0
 
