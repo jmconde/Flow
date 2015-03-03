@@ -1,26 +1,20 @@
 /* Flow v0.6 */
 (function() {
-    var root = this,
-        options = {
-            pageClass: "flow-page",
-            featureClass: "flow-feature",
-            pageTag: "article",
-            autostart: true,
-            title: "",
-            roles: [],
-            id: "flow-container",
-            flow: []
-        }, el,
-        Flow = root.Flow = {},
-        stop_action = false;
+    var root = this;
+    var options = {
+        pageClass: "flow-page",
+        featureClass: "flow-feature",
+        pageTag: "article",
+        autostart: true,
+        title: "",
+        roles: [],
+        id: "flow-container",
+        flow: []
+    }, el;
+    var Flow = root.Flow = {};
 
-    // Metodos y atributos publicos
-    Flow.stopAction = stopAction;
     Flow.setup = setup;
     Flow.start = start;
-	Flow.roles = roles;
-    Flow.hasRole = hasRole;
-    Flow.removeRole = removeRole;
     Flow.prevStop = prevStop;
     Flow.setDisplay = setDisplay;
     Flow.status = status;
@@ -30,29 +24,17 @@
     Flow.locale = locale;
     Flow.hasPermission = hasPermission;
     Flow.getHashParams = getHashParams;
-	Flow.get = get;
-    Flow.set = set;
-    Flow.bind = bind;
-    Flow.unbind = unbind;
-    Flow.trigger = trigger;
-    Flow.util = {
-        parse: parse,
-        json: json,
-        prevStop: prevStop,
-        authFinished: authFinished
-    };
+
 
     function setup(op) {
         $.fn.extend(options, op);
         el = $("#" + options.id);
         el.find("." + options.pageClass).hide();
         initPages();
-        initLoading();
         initFeatures();
         bindHistoryEvents();
         initTemplates();
-		if (Behaviors.initializa) Behaviors.initializa();
-        else if (options.initialize) options.initialize();
+
         if (options.flow.length > 0) {
             if (hasHash()) {
                 $(window).trigger("hashchange");
@@ -117,20 +99,12 @@
         }
     }
 
-    function initLoading() {
-        if (options.loading) {
-            $("#" + options.id).append($("<div id='flow-loading' class='flow-loading'><img src='" + options.loading + "' /></div>"));
-        }
-    }
-
     function addPage(obj) {
-        var page = $("#" + obj.id),
-            id = page.attr("id");
+        var page = $("#" + obj.id);
         if (!page.length) {
             page = $("<" + options.pageTag + "></" + options.pageTag + ">").addClass(options.pageClass).prop("id", obj.id).hide();
             $("#" + options.id).append(page);
         }
-		page.addClass(id).attr("id", options.pageClass + "-" + id);
         return page;
     }
 
@@ -153,7 +127,7 @@
     }
 
     function initNavigation(page, canAccess) {
-        if (options.navigation && page.navigation) {
+        if (options.navigation) {
             var classes = [],
                 classesStr = "";
             if (page.disabled) classes.push("disabled");
@@ -177,9 +151,6 @@
             Flow.setTriggers(toShow);
             if (options.aftershowpage) options.aftershowpage(toShow);
         } else {
-            if (options.loading) {
-                $("#flow-loading").show();
-            }
             if (!url) {
                 url = Routes.get(c.route, query);
             }
@@ -192,23 +163,20 @@
                         if (options.actual.id != toShow.id) return;
                         if (toShow.onloadcontent) toShow.onloadcontent(data);
                         fill(toShow, data);
-                        if (options.loading) {
-                            $("#flow-loading").hide();
-                        }
                     },
                     error: function(x) {
                         if (x.status == 404) {
                             if (toShow.parent) {
+                                console.log("#" + toShow.id);
                                 Flow.setDisplay("#" + toShow.parent);
                             }
-                        }
-                        if (options.loading) {
-                            $("#flow-loading").hide();
                         }
                     }
                 });
             }
+            //TODO: Other formats
         }
+
     }
 
     function fill(toShow, data) {
@@ -256,7 +224,9 @@
                     if (tokens[0] == "go") {
                         toShow.display.find(trigger.selector).unbind(trigger.action + ".flow").bind(trigger.action + ".flow", function(e) {
                             prevStop(e);
-                            Flow.setDisplay("#"+tokens[1]);
+                            Flow.setDisplay({
+                                index: tokens[1]
+                            });
                         });
                     }
                 }
@@ -281,7 +251,6 @@
     }
 
     function showFeature(show, f) {
-        if(f == null) {return;}
         if (show) {
             if (f.hidden) {
                 if (!f.show) f.elem.show();
@@ -310,19 +279,18 @@
     function initFeatures() {
         var len = 0,
             i = 0;
-        options.features = [];
-        $(".flow-feature").hide().each(function(i, elem){
-            elem = $(elem)
-            var feature = {
-                id: elem.attr("id"),
-                elem: elem,
-                hidden: true
-            };
-            feature.elem.show();
-            feature.elem.data("position", feature.elem.position());
-            feature.elem.hide();
-            options.features.push(feature);
-        });
+        if (options.features) {
+            $(".flow-feature").hide();
+            len = options.features.length;
+            for (; i < len; i++) {
+                var feature = options.features[i];
+                feature.elem = $("#" + feature.id);
+                feature.elem.show();
+                feature.elem.data("position", feature.elem.position());
+                feature.elem.hide();
+                feature.hidden = true;
+            }
+        }
     }
 
     function prevStop(e) {
@@ -344,24 +312,12 @@
             index,
             toShow,
             hasPermission;
+
+        //console.log("hash", params);
+
         index = getIndex(getRealhash(params));
-		if (index < 0) index = 0;
         toShow = options.flow[index];
-
-
-        if(Behaviors.authorize && Behaviors[toShow.id] && Behaviors[toShow.id].onauthorize){
-            unbind("authFinished");
-            bind("authFinished", function(){
-                checkPermission(toShow, params);
-            });
-            callFunction(Behaviors, "authorize", Behaviors[toShow.id].onauthorize, Behaviors[toShow.id].onunauthorize);
-        }else{
-            checkPermission(toShow, params);
-        }
-    }
-
-    function checkPermission(toShow, params){
-        var hasPermission = Flow.hasPermission(toShow.roles),
+        hasPermission = Flow.hasPermission(toShow.roles);
         isDisabled = toShow.disabled;
 
         if (hasPermission && !isDisabled) {
@@ -371,7 +327,6 @@
             });
         } else {
             console.error("NOT Authorized!");
-            callBehaviorsFunction(toShow, "onunauthorized");
         }
     }
 
@@ -394,19 +349,14 @@
             refreshNavigation(toShow);
         // Ocultamos el acutal
         if (options.actual) {
-            $("body, ." + options.featureClass).removeClass(options.actual.id);
+            $("." + options.featureClass).removeClass(options.actual.id);
             if (options.actual.onexit) options.actual.onexit(options.actual);
             hide(options.actual);
         }
-
-        $("body,." + options.featureClass).addClass(toShow.id);
+        $("." + options.featureClass).addClass(toShow.id);
         showFeatures(false, toShow.hideFeatures);
         showFeatures(true, toShow.showFeatures);
-        callBehaviorsFunction(toShow, "beforeshow");
-        if(stop_action) {
-            stop_action = false;
-            return;
-        }
+        if (toShow.beforeshow) toShow.beforeshow(toShow);
         options.actual = toShow;
 
         if (toShow.title) {
@@ -414,12 +364,10 @@
             title = $.trim(options.title + " " + second);
             document.title = title;
         }
-
         if (!toShow.content) {
             show(toShow);
             Flow.setTriggers(toShow);
             if (options.aftershowpage) options.aftershowpage(toShow);
-            $(window).scrollTop(0);
         } else {
             loadContent(toShow, parameters.query);
         }
@@ -503,20 +451,18 @@
     }
 
     function searchArray(arr, id, compareField, returnField) {
-		if (arr) {
-			var len = arr.length,
-				i = 0,
-				obj;
-			for (; i < len; i++) {
-				obj = arr[i];
-				if (id == obj[compareField]) {
-					if (returnField) {
-						return obj[returnField];
-					}
-					return obj;
-				}
-			}
-		}
+        var len = arr.length,
+            i = 0,
+            obj;
+        for (; i < len; i++) {
+            obj = arr[i];
+            if (id == obj[compareField]) {
+                if (returnField) {
+                    return obj[returnField];
+                }
+                return obj;
+            }
+        }
         return null;
     }
 
@@ -551,16 +497,9 @@
                     addRole(roletoadd);
                 }
             }
-        }
-        return options.roles;
-    }
-
-    function removeRole(role){
-        var array = options.roles;
-        for (var i=array.length-1; i>=0; i--) {
-            if (array[i] === role) {
-                array.splice(i, 1);
-            }
+            options.roles = roles;
+        } else {
+            return options.roles;
         }
     }
 
@@ -575,108 +514,20 @@
     function addRole(role) {
         if (typeof role === "string") {
             if (!hasRole(role)) {
-                options.roles.push(role);
+                roles.push(role);
             }
         }
     }
 
     function hasRole(role) {
         var i = 0,
-            len = options.roles.length;
+            len = roles.length;
         for (; i < len; i++) {
-            if (options.roles[i] == role) {
+            if (roles[i] == role) {
                 return true;
             }
         }
         return false;
-    }
-
-    function callBehaviorsFunction(toShow, functionName){
-        var scope = Behaviors[toShow.id];
-        callFunction(scope, functionName, toShow);
-    }
-    function callFunction(scope, functionName){
-        var newargs = Array.prototype.slice.call(arguments, 2);
-        if(hasFunction(scope, functionName)){
-            scope[functionName].apply(this, newargs);
-        }   
-    }
-    function hasFunction(scope, functionName){
-        try{
-            return $.isFunction(scope[functionName]);
-        }catch(e){
-            return false;
-        }
-    }
-
-    function parse(el) {
-        var obj = {};
-        $(el).find("input[type=text], select, textarea, input[type=radio]:checked, input[type=checkbox]:checked").each(function(i) {
-            var $el = $(this),
-                dataField = $el.attr("data-field");
-            if (typeof dataField !== "undefined" && dataField !== false) {
-                obj[dataField] = $el.val();
-            } else {
-                obj[$el.prop("id")] = $el.val();
-            }
-        });
-        return obj;
-    }
-
-    function stopAction(){
-        var len = arguments.length;
-        if (len) {
-            if(typeof arguments[0] === "boolean"){
-                stop_action = arguments[0];
-                
-            }
-        }
-        return stop_action;
-    }
-
-    function set(key, value) {
-        el.data(key, value);
-    }
-
-    function get(key) {
-        return el.data(key);
-    }
-
-    function bind(eventName, callback, data){
-        $(root).bind(eventName, callback, data);
-    }
-    function unbind(eventName){
-        $(root).unbind(eventName);
-    }
-    function trigger(eventName){
-        $(root).trigger(eventName);
-    }
-
-    function authFinished(){
-        trigger("authFinished");
-    }
-
-    function json(options) {
-        options.type = options.method || 'GET';
-        var opts = {
-            url: options.url,
-            async: true,
-            type: options.method,
-            dataType: "json",
-            success: options.success,
-            error: options.error
-        }, sep = "?";
-        if (options.url.indexOf("?") > -1) {
-            sep = "&";
-        }
-        options.url += sep + "t=" + new Date().getTime();
-        opts.url = options.url;
-        if (options.data)
-            opts.data = JSON.stringify(options.data);
-        if (options.error)
-            opts.error = options.error;
-        $.support.cors = true;
-        $.ajax(opts);
     }
 }).call(this);
 
