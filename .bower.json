@@ -1,0 +1,16 @@
+{
+  "name": "Flow",
+  "homepage": "https://github.com/jmconde/Flow",
+  "version": "0.6.0",
+  "author": {"name": "José Conde", "email": "jose.conde@gmail.com"},
+  "_release": "e88a98d487",
+  "_resolution": {
+    "type": "branch",
+    "branch": "master",
+    "commit": "e88a98d487615396e63ff341aa091edec6fb3c19"
+  },
+  "_source": "git://github.com/jmconde/Flow.git",
+  "_target": "*",
+  "_originalSource": "Flow",
+  "_direct": true
+}
